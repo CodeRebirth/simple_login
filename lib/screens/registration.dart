@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:simple_login/core/const/validation_error.dart';
+import 'package:simple_login/core/firestore/firestore_operations.dart';
 import 'package:simple_login/screens/home.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -11,10 +11,6 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   final TextEditingController _emailController = TextEditingController();
 
   final TextEditingController _passwordController = TextEditingController();
@@ -46,23 +42,32 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
     bool validateFields() {
       if (email.isEmpty || !email.contains('@')) {
-        _emailError = 'Please enter a valid email address';
+        _emailError = FieldValidationErrors.invalidEmail;
         return false;
       }
       if (password.isEmpty || password.length < 6) {
-        _passwordError = 'Password must be at least 6 characters long';
+        _passwordError = FieldValidationErrors.invalidPassword;
         return false;
       }
       if (fullName.isEmpty) {
-        _fullNameError = 'Please enter your full name';
+        _fullNameError = FieldValidationErrors.emptyFullName;
+        return false;
+      } else if (fullName.contains(RegExp(r'[0-9]'))) {
+        // Check if full name contains any numbers
+        _fullNameError = FieldValidationErrors.fullNameContainsNumbers;
         return false;
       }
+
       if (phoneNumber.isEmpty) {
-        _phoneNumberError = 'Please enter a phone number';
+        _phoneNumberError = FieldValidationErrors.emptyPhoneNumber;
+        return false;
+      } else if (phoneNumber.contains(RegExp(r'[A-Za-z]'))) {
+        // Check if phone number contains alphabetic characters
+        _phoneNumberError = FieldValidationErrors.phoneNumberContainsAlphabets;
         return false;
       }
       if (birthdate.isEmpty) {
-        _birthdateError = 'Please enter your birthdate';
+        _birthdateError = FieldValidationErrors.emptyBirthdate;
         return false;
       }
       return true;
@@ -82,22 +87,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
         setState(() {
           registerLoading = true;
         });
-        final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-          email: validationRes["email"],
-          password: validationRes["password"],
-        );
-
-        final User user = userCredential.user!;
 
         // Store additional user data in Firestore
-        _firestore.collection('users').doc(user.uid).set({
-          'id': user.uid,
-          'email': validationRes["email"],
-          'fullName': validationRes["fullName"],
-          'phoneNumber': validationRes["phoneNumber"],
-          'birthdate': validationRes["birthdate"],
-          // Add other user data fields as needed
-        }).then((value) {
+
+        FireStoreOperations().registerUser(validationRes).then((value) {
           Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (ctx) => const Home()));
         }).onError((error, stackTrace) {
           setState(() {
@@ -110,6 +103,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
         });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+
+    _passwordController.dispose();
+
+    _fullNameController.dispose();
+
+    _phoneNumberController.dispose();
+
+    _birthdateController.dispose();
+    super.dispose();
   }
 
   @override
