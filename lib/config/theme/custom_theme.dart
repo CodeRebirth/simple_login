@@ -5,6 +5,7 @@ import '../../core/const/color_const.dart';
 class CustomTheme {
   static ThemeData get themeData {
     return ThemeData(
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: ColorConst.primaryColor),
       primaryColor: ColorConst.primaryColor,
       appBarTheme: const AppBarTheme(color: ColorConst.primaryColor, elevation: 0),
       inputDecorationTheme: const InputDecorationTheme(
@@ -26,6 +27,7 @@ class CustomTheme {
         cursorColor: ColorConst.primaryColor, // Set the cursor color
         selectionHandleColor: ColorConst.primaryColor, // Set the selection handle color
       ),
+
       // Add more theme configurations as needed
     );
   }

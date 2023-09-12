@@ -3,6 +3,7 @@ import 'package:simple_login/core/auth/authentication.dart';
 import 'package:simple_login/core/const/color_const.dart';
 import 'package:simple_login/core/const/textsize_const.dart';
 import 'package:simple_login/screens/registration.dart';
+import 'package:simple_login/widgets/button.dart';
 import 'home.dart';
 
 class Login extends StatefulWidget {
@@ -13,23 +14,37 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  bool _isLoading = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   final Map<String, dynamic> _userRecord = {};
 
   Future<void> _login() async {
     final formState = _formKey.currentState;
     if (formState!.validate()) {
       formState.save();
-
-      Authentication().loginUser(_userRecord["email"], _userRecord["password"]).then((value) {
-        if (value.user!.uid.isNotEmpty) {
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (ctx) => const Home()));
-        }
-      }).onError((error, stackTrace) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Failed")));
+      setState(() {
+        _isLoading = true;
       });
+
+      try {
+        await Authentication().loginUser(_userRecord["email"], _userRecord["password"]);
+        navigateToHome();
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        showScaffoldMessenger();
+      }
     }
+  }
+
+  void showScaffoldMessenger() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Failed")));
+  }
+
+  void navigateToHome() {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (ctx) => const Home()));
   }
 
   @override
@@ -77,13 +92,7 @@ class _LoginState extends State<Login> {
               onSaved: (value) => _userRecord["password"] = value!,
             ),
             const SizedBox(height: 20.0),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text(
-                "Login",
-                style: TextStyle(fontSize: TextSize.medium),
-              ),
-            ),
+            !_isLoading ? Button(onPressed: _login, buttonText: "Login") : const Center(child: CircularProgressIndicator.adaptive()),
             TextButton(
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const RegistrationPage())),
               child: const Text(

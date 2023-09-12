@@ -5,5 +5,5 @@ class FieldValidationErrors {
   static const String fullNameContainsNumbers = 'Full name cannot contain numbers';
   static const String emptyPhoneNumber = 'Please enter a phone number';
   static const String phoneNumberContainsAlphabets = 'Phone number cannot contain alphabetic characters';
-  static const String emptyBirthdate = 'Please enter your birthdate';
+  static const String emptyAddress = 'Please enter your address';
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:simple_login/core/const/color_const.dart';
 import 'package:simple_login/core/const/validation_error.dart';
 import 'package:simple_login/core/firestore/firestore_operations.dart';
 import 'package:simple_login/screens/home.dart';
+import 'package:simple_login/widgets/button.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -19,7 +21,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   final TextEditingController _phoneNumberController = TextEditingController();
 
-  final TextEditingController _birthdateController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   String? _emailError;
 
@@ -29,7 +31,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   String? _phoneNumberError;
 
-  String? _birthdateError;
+  String? _addressError;
 
   bool registerLoading = false;
 
@@ -38,7 +40,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final password = _passwordController.text.trim();
     final fullName = _fullNameController.text.trim();
     final phoneNumber = _phoneNumberController.text.trim();
-    final birthdate = _birthdateController.text.trim();
+    final address = _addressController.text.trim();
 
     bool validateFields() {
       if (email.isEmpty || !email.contains('@')) {
@@ -66,8 +68,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
         _phoneNumberError = FieldValidationErrors.phoneNumberContainsAlphabets;
         return false;
       }
-      if (birthdate.isEmpty) {
-        _birthdateError = FieldValidationErrors.emptyBirthdate;
+      if (address.isEmpty) {
+        _addressError = FieldValidationErrors.emptyAddress;
         return false;
       }
       return true;
@@ -77,32 +79,33 @@ class _RegistrationPageState extends State<RegistrationPage> {
       setState(() {});
       return {};
     }
-    return {"email": email, "password": password, "fullName": fullName, "phoneNumber": phoneNumber, "birthdate": birthdate};
+    return {"email": email, "password": password, "fullName": fullName, "phoneNumber": phoneNumber, "address": address};
   }
 
-  Future<void> _registerUser(BuildContext context) async {
+  Future<void> _registerUser() async {
     final validationRes = validator();
     if (validationRes.isNotEmpty) {
       try {
         setState(() {
           registerLoading = true;
         });
-
-        // Store additional user data in Firestore
-
-        FireStoreOperations().registerUser(validationRes).then((value) {
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (ctx) => const Home()));
-        }).onError((error, stackTrace) {
-          setState(() {
-            registerLoading = false;
-          });
-        });
+        await FireStoreOperations().registerUser(validationRes);
+        navigateToHome();
       } catch (e) {
         setState(() {
           registerLoading = false;
         });
+        showScaffoldMessenger();
       }
     }
+  }
+
+  void navigateToHome() {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (ctx) => const Home()));
+  }
+
+  void showScaffoldMessenger() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Registration Failed")));
   }
 
   @override
@@ -115,7 +118,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
     _phoneNumberController.dispose();
 
-    _birthdateController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -154,20 +157,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 errorText: _phoneNumberError,
               ),
               _buildTextFieldWithSpacing(
-                controller: _birthdateController,
-                labelText: 'Birthdate (YYYY-MM-DD)',
-                errorText: _birthdateError,
+                controller: _addressController,
+                labelText: 'Address',
+                errorText: _addressError,
               ),
               registerLoading
                   ? const Center(
                       child: CircularProgressIndicator.adaptive(),
                     )
-                  : ElevatedButton(
-                      onPressed: () {
-                        _registerUser(context);
-                      },
-                      child: const Text('Register'),
-                    )
+                  : Button(onPressed: _registerUser, buttonText: "Register")
             ],
           ),
         ));
@@ -178,6 +176,7 @@ Widget _buildTextFieldWithSpacing({required TextEditingController controller, re
   return Column(
     children: [
       TextField(
+        keyboardType: labelText == "Phone Number" ? TextInputType.phone : TextInputType.text,
         maxLength: maxLength,
         controller: controller,
         decoration: InputDecoration(labelText: labelText, counter: Container()),
