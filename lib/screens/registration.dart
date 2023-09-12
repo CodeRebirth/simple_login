@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:simple_login/core/const/color_const.dart';
 import 'package:simple_login/core/const/validation_error.dart';
 import 'package:simple_login/core/firestore/firestore_operations.dart';
 import 'package:simple_login/screens/home.dart';
@@ -85,6 +84,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Future<void> _registerUser() async {
     final validationRes = validator();
     if (validationRes.isNotEmpty) {
+      FocusScope.of(context).unfocus(); //closing keyboard
       try {
         setState(() {
           registerLoading = true;
